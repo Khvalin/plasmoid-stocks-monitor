@@ -1,0 +1,20 @@
+
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "TODO",
+                "Name": "const"
+            }
+        ],
+        "Category": "TODO",
+        "Description": "TODO",
+        "Icon": "battery",
+        "Id": "com.github.const.stocksmonitor",
+        "Name": "Stocks Monitor",
+        "Version": "0.1",
+        "Website": "https://github.com/Khvalin/plasmoid-stocks-monitor"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
