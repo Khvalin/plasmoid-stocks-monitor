@@ -17,11 +17,18 @@ PlasmoidItem {
 
 	StockQuotes {
 		id: stockQuotes
+		//signal stockDataChanged(var stockData)
 	}
 
     Component.onCompleted: {
         Main.init({config: Config, fetch: Fetch})
-        //Main.loadData()
+        Main.loadData().then((data)=> {
+            const body = JSON.parse(data._bodyInit);
+            const bars = body?.bars || [];
+            //const symbols = Object.keys(bars)
+            stockQuotes.stockData = (bars);
+        })
+        //Plasmoid.internalAction("configure").trigger()
     }
 }
 

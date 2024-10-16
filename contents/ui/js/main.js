@@ -74,9 +74,9 @@ const loadData = () => {
         initData.headers = Object.assign({}, initData.headers, this.config.ALPACA_CONFIG.headers);
     }
 
-    this.fetch.fetch("https://data.alpaca.markets/v2/stocks/bars/latest?symbols=AAPL%2CTSLA&feed=iex", initData)
-        .then((data) => {
-            console.log(JSON.stringify(data));
-        }
-    );
+    return this.fetch.fetch("https://data.alpaca.markets/v2/stocks/bars/latest?symbols=AAPL%2CTSLA&feed=iex", initData)
+    //     .then((data) => {
+    //         console.log(JSON.stringify(data));
+    //     }
+    // );
 }
