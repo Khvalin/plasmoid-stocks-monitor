@@ -8,37 +8,49 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 import org.kde.plasma.components 3.0 as PlasmaComponents
 
-Item {
+import org.kde.kirigami as Kirigami
+
+Kirigami.AbstractCard {
     id: widget
-    height: 4000
-    width: 400
+
+    width: parent.width
+    height: parent.height
+
+    //color: PlasmaCore.Theme.backgroundColor  // Background matches the theme
 
     property var stockData: []
 
 
     ListModel {
         id: stockDataFlat
-        // Pre-defined items in the ListModel
-        ListElement { value: "Item 1" }
-        ListElement { value: "Item 2" }
-        ListElement { value: "Item 3" }
-        ListElement { value: "Item 4" }
-        ListElement { value: "Item 5" }
     }
 
     // Use GridView to render the table
     GridView {
         id: gridView
+        Layout.fillWidth: true
+
+        height: parent.height
+        cellWidth: parent.width / 2
+        cellHeight: Kirigami.Theme.defaultFont.pointSize * 1.6
+
+
+
+
         anchors.fill: parent
         model: stockDataFlat
 
+        delegate: Rectangle {
+            id: gridCell
 
-        delegate: Text {
 
             required property string value
-                anchors.centerIn: parent
-                text: value  // Access the text role directly
+            Text {
+                color: Kirigami.Theme.textColor
+                font.pointSize: Kirigami.Theme.defaultFont.pointSize
+                text: parent.value
             }
+        }
     }
 
 

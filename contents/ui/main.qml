@@ -6,12 +6,11 @@ import org.kde.plasma.components 3.0 as PlasmaComponents
 import "js/fetch.js" as Fetch
 import "js/config.js" as Config
 import "js/main.js" as Main
-//import "js/polygon-dist.js" as PolygonJS
 
 PlasmoidItem {
 	id: root
-    width: 400
-    height: 200
+    width: 200
+    height: 400
 
     //property string stocks:
 
