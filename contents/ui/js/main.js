@@ -74,9 +74,12 @@ const loadData = () => {
         initData.headers = Object.assign({}, initData.headers, this.config.ALPACA_CONFIG.headers);
     }
 
-    return this.fetch.fetch("https://data.alpaca.markets/v2/stocks/bars/latest?symbols=AAPL%2CTSLA&feed=iex", initData)
-    //     .then((data) => {
-    //         console.log(JSON.stringify(data));
-    //     }
-    // );
+    const url = new URL("https://data.alpaca.markets/v2/stocks/bars/latest");
+
+    console.log(JSON.stringify(plasmoid.configuration));
+
+    url.searchParams.set('symbols', plasmoid.configuration.selectedSymbols);
+    url.searchParams.set('feed', 'iex');
+
+    return this.fetch.fetch(url.toString(), initData)
 }

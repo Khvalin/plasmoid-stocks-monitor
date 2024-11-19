@@ -6,6 +6,11 @@
         <entry name="polygonApiKey" type="String">
             <default>Hello World</default>
         </entry>
+        <entry name="selectedSymbols" type="StringList">
+            <default>
+                AMZN
+            </default>
+        </entry>
     </group>
 
 </kcfg>
