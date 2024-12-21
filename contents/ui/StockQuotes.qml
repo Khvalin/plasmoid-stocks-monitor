@@ -8,6 +8,9 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 import org.kde.quickcharts as Charts
 
+
+import org.kde.plasma.extras as PlasmaExtras
+
 Kirigami.AbstractCard {
     //color: PlasmaCore.Theme.backgroundColor  // Background matches the theme
 
@@ -24,10 +27,9 @@ Kirigami.AbstractCard {
                 "value": key
             });
             stockDataFlat.append({
-                "value": `${stockData[key].vw}`
+                "value": `${stockData[key].vw.toLocaleString(Qt.locale(), 'f', 2)}`
             });
         }
-        console.log("Stock Data Changed:", JSON.stringify(stockDataFlat));
     }
 
     ListModel {

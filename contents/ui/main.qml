@@ -20,6 +20,7 @@ PlasmoidItem {
             "fetch": Fetch
         });
         Main.loadData().then((data) => {
+            console.log(data._bodyInit);
             const body = JSON.parse(data._bodyInit);
             const bars = body?.bars || [];
             //const symbols = Object.keys(bars)
@@ -32,5 +33,14 @@ PlasmoidItem {
 
         id: stockQuotes
     }
+
+    // Plasmoid.contextualActions: [
+    //     PlasmaCore.Action {
+    //         text: i18nc("@action", "Open System Monitor…")
+    //         icon.name: "utilities-system-monitor"
+    //         onTriggered: Plasmoid.openSystemMonitor()
+    //     }
+    // ]
+
 
 }

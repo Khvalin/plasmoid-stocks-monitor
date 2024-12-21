@@ -7,38 +7,70 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 
 Kirigami.FormLayout {
-    //property alias cfg_polygonApiKey: polygonApiKey.text
+    property var cfg_selectedSymbols: []
+    property var loaded: false
 
-    id: page
+    id: configGeneralForm
+
 
     Component.onCompleted: {
-        for (const text of plasmoid.configuration.selectedSymbols) {
+        for (const text of cfg_selectedSymbols) {
             chips.append({
                 "text": text
             });
         }
+        insertTextField.forceActiveFocus();
+        configGeneralForm.loaded = true;
     }
+
 
     ListModel {
         id: chips
 
         onCountChanged: {
-            console.log("Symbols changed:", JSON.stringify(chips));
+            if (!configGeneralForm.loaded) {
+                return;
+            }
+
+            console.log(chips.count)
+
+            const res = []
+            for( var i = 0; i < chips.count; i++ ) {
+                res.push(chips.get(i).text)
+            }
+
+            configGeneralForm.cfg_selectedSymbols = res
         }
     }
 
     Controls.TextField {
         id: insertTextField
 
-        Kirigami.FormData.label: "Item:"
-        onAccepted: chips.append({
-            "text": insertTextField.text
-        })
-    }
-    // Wrapped in ColumnLayout to prevent binding loops.
+        Kirigami.FormData.label: "Symbol:"
 
-    GridLayout {
-        Layout.alignment: Qt.AlignLeading
+        function onEnterPressed(event)
+        {
+            event.accepted = true // prevent further processing of the event
+
+            const text = insertTextField.text.trim();
+            if (text !== "") {
+                chips.append({ "text": text })
+                insertTextField.clear()
+            }
+        }
+
+
+        Keys.onReturnPressed: event => { onEnterPressed(event) }
+        Keys.onEnterPressed: event =>  { onEnterPressed(event) }
+    }
+
+    Flow {
+        id: chipsContainer
+        width: parent.width
+        height: chips.count * Kirigami.Units.gridUnit
+
+        flow :Flow.LeftToRight
+        spacing: Kirigami.Units.smallSpacing
 
         Repeater {
             model: chips

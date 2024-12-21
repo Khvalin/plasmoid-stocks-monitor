@@ -3,12 +3,9 @@
     <kcfgfile name=""/>
 
     <group name="General">
-        <entry name="polygonApiKey" type="String">
-            <default>Hello World</default>
-        </entry>
         <entry name="selectedSymbols" type="StringList">
             <default>
-                AMZN
+                CSCO,AMZN,BA,META,MSFT,NVDA,RDDT
             </default>
         </entry>
     </group>
