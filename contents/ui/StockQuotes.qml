@@ -22,7 +22,11 @@ Kirigami.AbstractCard {
     height: parent.height
     onStockDataChanged: {
         stockDataFlat.clear();
-        for (const key of Object.keys(stockData)) {
+        const keys = plasmoid.configuration.selectedSymbols;
+        for (const key of keys) {
+            if (!(key in stockData)) {
+                continue;
+            }
             stockDataFlat.append({
                 "value": key
             });
