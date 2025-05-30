@@ -3,11 +3,12 @@ import "js/config.js" as Config
 import "js/fetch.js" as Fetch
 import "js/main.js" as Main
 
-import QtQuick.Layouts
+import QtQuick.Layouts 1.15
 import org.kde.plasma.components 3.0 as PlasmaComponents
-import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.extras 2.0 as PlasmaExtras
-import org.kde.plasma.plasmoid
+import org.kde.plasma.plasmoid 2.0
+import org.kde.kirigami 2.12 as Kirigami
 
 PlasmoidItem {
     //property string stocks:
@@ -18,55 +19,104 @@ PlasmoidItem {
     width: 200
     height: 400 //Kirigami.Units.gridUnit * 1400
 
+    property bool isLoading: false
+    
+    function refreshData() {
+        isLoading = true;
+        Main.loadData().then((data) => {
+            console.log(data._bodyInit);
+            const body = JSON.parse(data._bodyInit);
+            const bars = body?.bars || [];
+            stockQuotes.stockData = bars;
+            isLoading = false;
+        }).catch(error => {
+            console.error("Failed to load stock data:", error);
+            isLoading = false;
+        });
+    }
+
     Component.onCompleted: {
         Main.init({
             "config": Config,
             "fetch": Fetch
         });
-        Main.loadData().then((data) => {
-            console.log(data._bodyInit);
-            const body = JSON.parse(data._bodyInit);
-            const bars = body?.bars || [];
-            //const symbols = Object.keys(bars)
-            stockQuotes.stockData = (bars);
-        });
+        refreshData();
     }
 
         ColumnLayout{
             width: parent.width
             height: parent.height
 
-            PlasmaComponents.ToolButton {
-                text: "Tools"
-                onClicked: {
-                    contextMenu.open()
+            RowLayout {
+                Layout.fillWidth: true
+                
+                PlasmaComponents.Button {
+                    text: "Tools"
+                    icon.name: "configure"
+                    onClicked: {
+                        contextMenu.popup(this, 0, height)
+                    }
+                }
+                
+                PlasmaComponents.BusyIndicator {
+                    running: root.isLoading
+                    visible: root.isLoading
+                    Layout.preferredHeight: Kirigami.Units.gridUnit * 2
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 2
                 }
             }
 
             Item {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
+                
+                PlasmaComponents.BusyIndicator {
+                    anchors.centerIn: parent
+                    running: root.isLoading && stockQuotes.stockData.length === 0
+                    visible: root.isLoading && stockQuotes.stockData.length === 0
+                    Layout.preferredHeight: Kirigami.Units.gridUnit * 4
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 4
+                }
+                
                 StockQuotes {
-                    //signal stockDataChanged(var stockData)
                     id: stockQuotes
+                    anchors.fill: parent
+                    opacity: root.isLoading ? 0.6 : 1.0
+                    Behavior on opacity {
+                        NumberAnimation { duration: 250 }
+                    }
                 }
             }
         }
-    
 
-    ListModel {
-        id: menuModel
-        ListElement { name: "Item 1" }
-        ListElement { name: "Item 2" }
-        ListElement { name: "Item 3" }
-    }
 
-    PlasmaExtras.ModelContextMenu {
+    PlasmaComponents.Menu {
         id: contextMenu
-        model: menuModel
-        onTriggered: action=>{
-            console.log("Action triggered: " + action.id)
+
+        PlasmaComponents.MenuItem {
+            text: "Refresh Data"
+            icon.name: "view-refresh"
+            enabled: !root.isLoading
+            onClicked: {
+                refreshData();
+            }
+        }
+
+        PlasmaComponents.MenuItem {
+            text: "Settings"
+            icon.name: "configure"
+            onClicked: {
+                Plasmoid.internalAction("configure").trigger();
+            }
+        }
+
+        PlasmaComponents.MenuItem {
+            text: "About"
+            icon.name: "help-about"
+            onClicked: {
+                console.log("About clicked");
+            }
         }
     }
-     
+
 }
