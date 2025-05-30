@@ -1,26 +1,28 @@
-
-
-const init = ({config, fetch}) => {
-    this.fetch = fetch;
-    this.config = config;
+const init = ({ config, fetch }) => {
+  this.fetch = fetch;
+  this.config = config;
 };
 
 const loadData = () => {
-    const initData = {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        },
-    }
+  const initData = {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  };
 
-    if (this.config?.ALPACA_CONFIG?.headers) {
-        initData.headers = Object.assign({}, initData.headers, this.config.ALPACA_CONFIG.headers);
-    }
+  if (this.config?.ALPACA_CONFIG?.headers) {
+    initData.headers = Object.assign(
+      {},
+      initData.headers,
+      this.config.ALPACA_CONFIG.headers,
+    );
+  }
 
-    const url = new URL("https://data.alpaca.markets/v2/stocks/bars/latest");
+  const url = new URL("https://data.alpaca.markets/v2/stocks/bars/latest");
 
-    url.searchParams.set('symbols', plasmoid.configuration.selectedSymbols);
-    url.searchParams.set('feed', 'iex');
+  url.searchParams.set("symbols", plasmoid.configuration.selectedSymbols);
+  url.searchParams.set("feed", "iex");
 
-    return this.fetch.fetch(url.toString(), initData)
-}
+  return this.fetch.fetch(url.toString(), initData);
+};

@@ -16,14 +16,14 @@ PlasmoidItem {
 
     id: root
 
-    width: 200
-    height: 400 //Kirigami.Units.gridUnit * 1400
+    width: 10 * Kirigami.Units.gridUnit
+    height: 20 * Kirigami.Units.gridUnit
 
     property bool isLoading: false
-    
+
     function refreshData() {
         isLoading = true;
-        Main.loadData().then((data) => {
+        Main.loadData().then(data => {
             console.log(data._bodyInit);
             const body = JSON.parse(data._bodyInit);
             const bars = body?.bars || [];
@@ -43,52 +43,46 @@ PlasmoidItem {
         refreshData();
     }
 
-        ColumnLayout{
-            width: parent.width
-            height: parent.height
+    ColumnLayout {
+        width: parent.width
+        height: parent.height
 
-            RowLayout {
-                Layout.fillWidth: true
-                
-                PlasmaComponents.Button {
-                    text: "Tools"
-                    icon.name: "configure"
-                    onClicked: {
-                        contextMenu.popup(this, 0, height)
-                    }
-                }
-                
-                PlasmaComponents.BusyIndicator {
-                    running: root.isLoading
-                    visible: root.isLoading
-                    Layout.preferredHeight: Kirigami.Units.gridUnit * 2
-                    Layout.preferredWidth: Kirigami.Units.gridUnit * 2
-                }
-            }
+        RowLayout {
+            Layout.fillWidth: true
 
-            Item {
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-                
-                PlasmaComponents.BusyIndicator {
-                    anchors.centerIn: parent
-                    running: root.isLoading && stockQuotes.stockData.length === 0
-                    visible: root.isLoading && stockQuotes.stockData.length === 0
-                    Layout.preferredHeight: Kirigami.Units.gridUnit * 4
-                    Layout.preferredWidth: Kirigami.Units.gridUnit * 4
-                }
-                
-                StockQuotes {
-                    id: stockQuotes
-                    anchors.fill: parent
-                    opacity: root.isLoading ? 0.6 : 1.0
-                    Behavior on opacity {
-                        NumberAnimation { duration: 250 }
-                    }
+            PlasmaComponents.Button {
+                text: "Tools"
+                icon.name: "configure"
+                onClicked: {
+                    contextMenu.popup(this, 0, height);
                 }
             }
         }
 
+        Item {
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+
+            PlasmaComponents.BusyIndicator {
+                anchors.centerIn: parent
+                running: root.isLoading
+                visible: root.isLoading
+                Layout.preferredHeight: 4 * Kirigami.Units.gridUnit
+                Layout.preferredWidth: 4 * Kirigami.Units.gridUnit
+            }
+
+            StockQuotes {
+                id: stockQuotes
+                anchors.fill: parent
+                opacity: root.isLoading ? 0.6 : 1.0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 250
+                    }
+                }
+            }
+        }
+    }
 
     PlasmaComponents.Menu {
         id: contextMenu
@@ -109,14 +103,5 @@ PlasmoidItem {
                 Plasmoid.internalAction("configure").trigger();
             }
         }
-
-        PlasmaComponents.MenuItem {
-            text: "About"
-            icon.name: "help-about"
-            onClicked: {
-                console.log("About clicked");
-            }
-        }
     }
-
 }

@@ -24,7 +24,7 @@ Kirigami.AbstractCard {
                 "value": key,
                 "isSymbol": true
             });
-            
+
             // Handle case where data doesn't exist for this symbol
             if (!stockData || !(key in stockData)) {
                 stockDataFlat.append({
@@ -33,7 +33,7 @@ Kirigami.AbstractCard {
                 });
                 continue;
             }
-            
+
             // Extract value safely with fallbacks
             let stockValue = "N/A";
             try {
@@ -43,7 +43,7 @@ Kirigami.AbstractCard {
             } catch (e) {
                 console.log("Error formatting stock value for " + key + ": " + e);
             }
-            
+
             stockDataFlat.append({
                 "value": stockValue,
                 "isSymbol": false
@@ -54,7 +54,7 @@ Kirigami.AbstractCard {
     ListModel {
         id: stockDataFlat
     }
-    
+
     PlasmaComponents.Label {
         id: noDataLabel
         anchors.centerIn: parent
@@ -88,9 +88,10 @@ Kirigami.AbstractCard {
             property bool isError: false
 
             Text {
-                color: value === "N/A" ? Kirigami.Theme.negativeTextColor : 
-                       isSymbol ? Kirigami.Theme.disabledTextColor : 
-                       Kirigami.Theme.highlightColor
+//                color: value === "N/A" ? Kirigami.Theme.negativeTextColor :
+//                       isSymbol ? Kirigami.Theme.disabledTextColor :
+//                       Kirigami.Theme.highlightColor
+                color: Kirigami.Theme.textColor
                 font.pointSize: Kirigami.Theme.defaultFont.pointSize
                 font.bold: isSymbol
                 text: parent.value
