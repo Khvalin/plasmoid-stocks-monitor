@@ -1,3 +1,13 @@
+let _onBackOnline = null;
+
+const backOnline = new Promise((resolve) => {
+  _onBackOnline = resolve;
+});
+
+const onBackOnline = () => {
+  _onBackOnline();
+};
+
 const init = ({ config, fetch }) => {
   this.fetch = fetch;
   this.config = config;

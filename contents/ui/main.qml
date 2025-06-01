@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import "js/config.js" as Config
 import "js/fetch.js" as Fetch
-import "js/main.js" as Main
+import "js/global.js" as Global
 
 import QtQuick.Layouts 1.15
 import org.kde.plasma.components 3.0 as PlasmaComponents
@@ -9,6 +9,8 @@ import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.extras 2.0 as PlasmaExtras
 import org.kde.plasma.plasmoid 2.0
 import org.kde.kirigami 2.12 as Kirigami
+
+//import org.kde.plasma.networkmanagement as PlasmaNM
 
 PlasmoidItem {
     //property string stocks:
@@ -19,28 +21,19 @@ PlasmoidItem {
     width: 10 * Kirigami.Units.gridUnit
     height: 20 * Kirigami.Units.gridUnit
 
-    property bool isLoading: false
-
-    function refreshData() {
-        isLoading = true;
-        Main.loadData().then(data => {
-            console.log(data._bodyInit);
-            const body = JSON.parse(data._bodyInit);
-            const bars = body?.bars || [];
-            stockQuotes.stockData = bars;
-            isLoading = false;
-        }).catch(error => {
-            console.error("Failed to load stock data:", error);
-            isLoading = false;
-        });
-    }
+    property bool isOnline: false
 
     Component.onCompleted: {
-        Main.init({
+        Global.init({
             "config": Config,
             "fetch": Fetch
         });
-        refreshData();
+
+        Global.backOnline.then(() => {
+            root.isOnline = true;
+        });
+
+        Global.onBackOnline();
     }
 
     ColumnLayout {
@@ -65,16 +58,16 @@ PlasmoidItem {
 
             PlasmaComponents.BusyIndicator {
                 anchors.centerIn: parent
-                running: root.isLoading
-                visible: root.isLoading
+                running: !root.isOnline
+                visible: !root.isOnline
                 Layout.preferredHeight: 4 * Kirigami.Units.gridUnit
                 Layout.preferredWidth: 4 * Kirigami.Units.gridUnit
             }
 
-            StockQuotes {
-                id: stockQuotes
+            StockLoader {
+                id: stockLoader
                 anchors.fill: parent
-                opacity: root.isLoading ? 0.6 : 1.0
+                opacity: !root.isOnline ? 0.6 : 1.0
                 Behavior on opacity {
                     NumberAnimation {
                         duration: 250
@@ -92,7 +85,7 @@ PlasmoidItem {
             icon.name: "view-refresh"
             enabled: !root.isLoading
             onClicked: {
-                refreshData();
+                stockLoader.refreshData();
             }
         }
 
