@@ -1,6 +1,9 @@
 import QtQuick 2.15
 import "js/config.js" as Config
 import "js/fetch.js" as Fetch
+import "js/apiService.js" as ApiServiceModule
+import "js/alpacaApiService.js" as AlpacaApiServiceModule
+
 import "js/global.js" as Global
 
 import QtQuick.Layouts 1.15
@@ -26,7 +29,9 @@ PlasmoidItem {
     Component.onCompleted: {
         Global.init({
             "config": Config,
-            "fetch": Fetch
+            "fetch": Fetch,
+            "apiService": ApiServiceModule.ApiService,
+            "alpacaApiService": AlpacaApiServiceModule.AlpacaApiService
         });
 
         Global.backOnline.then(() => {
@@ -66,6 +71,7 @@ PlasmoidItem {
 
             StockLoader {
                 id: stockLoader
+                global: Global
                 anchors.fill: parent
                 opacity: !root.isOnline ? 0.6 : 1.0
                 Behavior on opacity {

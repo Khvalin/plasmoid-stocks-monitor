@@ -6,7 +6,6 @@ import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid 2.0
 import org.kde.quickcharts 1.0 as Charts
 
-
 import org.kde.plasma.extras as PlasmaExtras
 
 Kirigami.AbstractCard {
@@ -37,7 +36,7 @@ Kirigami.AbstractCard {
             // Extract value safely with fallbacks
             let stockValue = "N/A";
             try {
-                if (stockData[key] && stockData[key].vw !== undefined) {
+                if (stockData[key] && Number.isFinite(stockData[key].vw)) {
                     stockValue = stockData[key].vw.toLocaleString(Qt.locale(), 'f', 2);
                 }
             } catch (e) {
@@ -65,7 +64,6 @@ Kirigami.AbstractCard {
         font.italic: true
     }
 
-    // Use GridView to render the table
     GridView {
         id: gridView
 
@@ -88,9 +86,9 @@ Kirigami.AbstractCard {
             property bool isError: false
 
             Text {
-//                color: value === "N/A" ? Kirigami.Theme.negativeTextColor :
-//                       isSymbol ? Kirigami.Theme.disabledTextColor :
-//                       Kirigami.Theme.highlightColor
+                //                color: value === "N/A" ? Kirigami.Theme.negativeTextColor :
+                //                       isSymbol ? Kirigami.Theme.disabledTextColor :
+                //                       Kirigami.Theme.highlightColor
                 color: Kirigami.Theme.textColor
                 font.pointSize: Kirigami.Theme.defaultFont.pointSize
                 font.bold: isSymbol
@@ -102,5 +100,4 @@ Kirigami.AbstractCard {
             }
         }
     }
-
 }
