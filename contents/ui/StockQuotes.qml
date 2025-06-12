@@ -27,7 +27,11 @@ Kirigami.AbstractCard {
             try {
                 if (stockData?.[key] && Number.isFinite(stockData[key]?.currentWeightedPrice)) {
                     stockValue = stockData[key].currentWeightedPrice.toLocaleString(Qt.locale(), 'f', 2);
-                    stockHistoricalPrice = stockData[key].historicalWeightedPrice;
+                    stockHistoricalPrice = stockData[key].historicalWeightedPrice.map(item => {
+                        return {
+                            value: item
+                        };
+                    });
                 }
             } catch (e) {
                 console.log("Error formatting stock value for " + key + ": " + e);
@@ -36,7 +40,7 @@ Kirigami.AbstractCard {
             stockDataFlat.append({
                 symbol: key,
                 "value": stockValue,
-                "historicalPrice": stockHistoricalPrice || []
+                "historicalPrice": (stockHistoricalPrice || [])
             });
         }
     }

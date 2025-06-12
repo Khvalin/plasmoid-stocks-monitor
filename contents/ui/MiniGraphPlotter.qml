@@ -5,7 +5,7 @@ Rectangle {
     id: miniGraph
 
     // Public properties
-    property var dataPoints: []
+    property var dataPoints: null  // Expects QQmlListModel only
     property color lineColor: Kirigami.Theme.highlightColor
     property color fillColor: Qt.rgba(lineColor.r, lineColor.g, lineColor.b, 0.1)
     property color backgroundColor: "transparent"
@@ -42,32 +42,10 @@ Rectangle {
             return;
         }
 
-        // Handle QQmlListModel
-        if (typeof dataPoints.count !== 'undefined') {
-            for (var i = 0; i < dataPoints.count; i++) {
-                var item = dataPoints.get(i);
-                if (typeof item === 'number') {
-                    processedDataPoints.push(item);
-                } else if (item && typeof item.value === 'number') {
-                    processedDataPoints.push(item.value);
-                } else if (item && typeof item.modelData === 'number') {
-                    processedDataPoints.push(item.modelData);
-                } else if (item && Object.keys(item).length === 1) {
-                    // Sometimes the item is an object with a single numeric property
-                    var key = Object.keys(item)[0];
-                    if (typeof item[key] === 'number') {
-                        processedDataPoints.push(item[key]);
-                    }
-                }
-            }
-        } else
-        // Handle regular JavaScript array
-        if (Array.isArray(dataPoints)) {
-            processedDataPoints = dataPoints.slice(); // Create a copy
-        } else
-        // Handle single values or other formats
-        if (typeof dataPoints === 'number') {
-            processedDataPoints = [dataPoints];
+        // Handle QQmlListModel of numbers only
+        for (var i = 0; i < dataPoints.count; i++) {
+            var item = dataPoints.get(i).value;
+            processedDataPoints.push(item);
         }
     }
 
