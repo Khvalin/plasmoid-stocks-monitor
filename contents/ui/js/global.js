@@ -19,8 +19,6 @@ const init = ({ config, fetch, apiService, alpacaApiService }) => {
     config.ALPACA_CONFIG,
   );
 
-  console.log(alpacaApiService, stocksApi, stocksApi.loadData);
-
   DIContainer.stocksApi = stocksApi;
   DIContainer.fetch = fetch;
   DIContainer.config = config;

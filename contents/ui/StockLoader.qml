@@ -14,10 +14,32 @@ Item {
     function refreshData() {
         isLoading = true;
 
-        console.log("global.DIContainer", global.DIContainer);
+        const symbols = plasmoid.configuration.selectedSymbols;
+        const endDate = (new Date());
+        const startDate = new Date(endDate);
+        startDate.setHours(startDate.getHours() - 24);
 
-        global.backOnline.then(global.DIContainer.stocksApi.loadData(plasmoid.configuration.selectedSymbols).then(data => {
-            stockQuotes.stockData = data.bars;
+        const stocksApi = global.DIContainer.stocksApi;
+
+        const loadAllData = () => Promise.all([stocksApi.getHistoricalData(symbols, '20Min', startDate, undefined), stocksApi.getLatestMarketData(symbols)]) //cr
+            .then(([historicalData, latestData]) => {
+                const stocksData = {};
+                for (const symbol in latestData.bars) {
+                    stocksData[symbol] = {
+                        currentWeightedPrice: latestData.bars[symbol].vw,
+                        historicalWeightedPrice: historicalData?.bars[symbol]?.map(data => data.vw),
+                        historicalDateTime: historicalData?.bars[symbol]?.map(data => data.t)
+                    };
+                }
+                console.debug("loaded data", JSON.stringify(stocksData));
+
+                return stocksData;
+            }).catch(error => {
+                console.error("Failed to load data:", error);
+            });
+
+        global.backOnline.then(loadAllData().then(data => {
+            stockQuotes.stockData = data;
             stockLoader.isLoading = false;
         }).catch(error => {
             console.error("Failed to load stock data:", error);

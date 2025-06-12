@@ -15,37 +15,28 @@ Kirigami.AbstractCard {
 
     width: parent.width
     height: parent.height
+
     onStockDataChanged: {
         stockDataFlat.clear();
         const keys = plasmoid.configuration.selectedSymbols;
         for (const key of keys) {
-            stockDataFlat.append({
-                "value": key,
-                "isSymbol": true
-            });
-
-            // Handle case where data doesn't exist for this symbol
-            if (!stockData || !(key in stockData)) {
-                stockDataFlat.append({
-                    "value": "N/A",
-                    "isSymbol": false
-                });
-                continue;
-            }
 
             // Extract value safely with fallbacks
             let stockValue = "N/A";
+            let stockHistoricalPrice = [];
             try {
-                if (stockData[key] && Number.isFinite(stockData[key].vw)) {
-                    stockValue = stockData[key].vw.toLocaleString(Qt.locale(), 'f', 2);
+                if (stockData?.[key] && Number.isFinite(stockData[key]?.currentWeightedPrice)) {
+                    stockValue = stockData[key].currentWeightedPrice.toLocaleString(Qt.locale(), 'f', 2);
+                    stockHistoricalPrice = stockData[key].historicalWeightedPrice;
                 }
             } catch (e) {
                 console.log("Error formatting stock value for " + key + ": " + e);
             }
 
             stockDataFlat.append({
+                symbol: key,
                 "value": stockValue,
-                "isSymbol": false
+                "historicalPrice": stockHistoricalPrice || []
             });
         }
     }
@@ -64,39 +55,66 @@ Kirigami.AbstractCard {
         font.italic: true
     }
 
-    GridView {
-        id: gridView
-
-        Layout.fillWidth: true
-        height: parent.height
-        cellWidth: parent.width / 2
-        cellHeight: Kirigami.Theme.defaultFont.pointSize * 2.2
+    ListView {
+        id: listView
         anchors.fill: parent
         model: stockDataFlat
+        spacing: 5
         clip: true
 
-        delegate: Rectangle {
-            id: gridCell
-            width: gridView.cellWidth
-            height: gridView.cellHeight
-            color: "transparent"
+        delegate: ColumnLayout {
+            width: listView.width
+            RowLayout {
+                width: parent.width
+                spacing: Kirigami.Units.smallSpacing
 
-            property string value: model.value
-            property bool isSymbol: model.isSymbol
-            property bool isError: false
+                Text {
+                    id: symbolText
+                    Layout.minimumWidth: 80
+                    Layout.preferredWidth: implicitWidth + 20
+                    Layout.maximumWidth: parent.width / 2
 
-            Text {
-                //                color: value === "N/A" ? Kirigami.Theme.negativeTextColor :
-                //                       isSymbol ? Kirigami.Theme.disabledTextColor :
-                //                       Kirigami.Theme.highlightColor
-                color: Kirigami.Theme.textColor
-                font.pointSize: Kirigami.Theme.defaultFont.pointSize
-                font.bold: isSymbol
-                text: parent.value
-                anchors.fill: parent
-                anchors.rightMargin: 10
-                horizontalAlignment: Text.AlignRight
-                verticalAlignment: Text.AlignVCenter
+                    text: model.symbol
+                    color: Kirigami.Theme.textColor
+                    font.pointSize: Kirigami.Theme.defaultFont.pointSize
+                    font.bold: true
+                    horizontalAlignment: Text.AlignLeft
+                    verticalAlignment: Text.AlignVCenter
+
+                    leftPadding: Kirigami.Units.mediumSpacing
+                    rightPadding: Kirigami.Units.mediumSpacing
+                    topPadding: Kirigami.Units.mediumSpacing / 2
+                    bottomPadding: Kirigami.Units.mediumSpacing / 2
+                }
+
+                Text {
+                    id: valueText
+                    Layout.fillWidth: true  // Takes remaining space
+
+                    text: model.value
+                    color: Kirigami.Theme.textColor
+                    font.pointSize: Kirigami.Theme.defaultFont.pointSize
+                    horizontalAlignment: Text.AlignRight
+                    verticalAlignment: Text.AlignVCenter
+
+                    leftPadding: Kirigami.Units.mediumSpacing
+                    rightPadding: Kirigami.Units.mediumSpacing
+                    topPadding: Kirigami.Units.mediumSpacing / 2
+                    bottomPadding: Kirigami.Units.mediumSpacing / 2
+                }
+            }
+
+            RowLayout {
+                width: parent.width
+                spacing: Kirigami.Units.smallSpacing
+
+                MiniGraphPlotter {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 30
+                    dataPoints: model.historicalPrice
+                    lineColor: Kirigami.Theme.highlightColor
+                    showFill: true
+                }
             }
         }
     }

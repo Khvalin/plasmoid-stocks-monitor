@@ -18,12 +18,12 @@ class AlpacaApiService {
   }
 
   /**
-   * Loads stock data from Alpaca API
+   *  Gets the latest market data for specified symbol
    * @param {string} symbols - Comma-separated list of stock symbols to fetch
    * @param {string} feed - The data feed to use (default: 'iex')
    * @returns {Promise} A promise that resolves to the stock data
    */
-  loadData(symbols, feed = "iex") {
+  getLatestMarketData(symbols, feed = "iex") {
     // Build the query parameters
     const queryParams = new URLSearchParams();
     queryParams.set("symbols", symbols);
@@ -42,34 +42,28 @@ class AlpacaApiService {
   }
 
   /**
-   * Gets the latest market data for specified symbols
-   * @param {string} symbols - Comma-separated list of stock symbols
-   * @returns {Promise} A promise that resolves to the latest market data
-   */
-  getLatestMarketData(symbols) {
-    return this.loadData(symbols);
-  }
-
-  /**
    * Gets historical data for a specific symbol
    * @param {string} symbol - The stock symbol
    * @param {string} timeframe - Timeframe for the data (e.g., '1D', '1H', etc.)
-   * @param {string} start - Start date in ISO format
-   * @param {string} end - End date in ISO format
+   * @param {Date} start - Start date in ISO format
+   * @param {Date} end - End date in ISO format
    * @returns {Promise} A promise that resolves to historical data
    */
-  getHistoricalData(symbol, timeframe = "1D", start, end) {
+  getHistoricalData(symbols, timeframe = "1D", start, end) {
     const queryParams = new URLSearchParams();
-    queryParams.set("symbols", symbol);
+    queryParams.set("symbols", symbols);
+    queryParams.set("feed", "iex");
     queryParams.set("timeframe", timeframe);
 
     if (start) {
-      queryParams.set("start", start);
+      queryParams.set("start", start.toISOString());
     }
 
     if (end) {
-      queryParams.set("end", end);
+      queryParams.set("end", end.toISOString());
     }
+
+    console.log(start.toISOString());
 
     return this.apiService.get(`stocks/bars?${queryParams.toString()}`);
   }

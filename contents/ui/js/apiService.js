@@ -89,6 +89,8 @@ class ApiService {
       headers: headers,
     });
 
+    console.debug(`Requesting ${url}`);
+
     return this.fetch(url, fetchOptions).then((response) => {
       if (!response.ok) {
         throw new Error(

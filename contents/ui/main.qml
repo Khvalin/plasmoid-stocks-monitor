@@ -16,9 +16,6 @@ import org.kde.kirigami 2.12 as Kirigami
 //import org.kde.plasma.networkmanagement as PlasmaNM
 
 PlasmoidItem {
-    //property string stocks:
-    //Plasmoid.internalAction("configure").trigger()
-
     id: root
 
     width: 10 * Kirigami.Units.gridUnit
