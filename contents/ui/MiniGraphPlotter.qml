@@ -71,14 +71,16 @@ Rectangle {
     }
 
     function mapX(index) {
-        if (processedDataPoints.length <= 1)
+        if (processedDataPoints.length <= 1) {
             return margin;
+        }
         return margin + (index / (processedDataPoints.length - 1)) * plotWidth;
     }
 
     function mapY(value) {
-        if (valueRange === 0)
+        if (valueRange === 0) {
             return margin + plotHeight / 2;
+        }
         return margin + plotHeight - ((value - minValue) / valueRange) * plotHeight;
     }
 
@@ -91,8 +93,9 @@ Rectangle {
             var ctx = getContext("2d");
             ctx.clearRect(0, 0, width, height);
 
-            if (!processedDataPoints.length)
+            if (!processedDataPoints.length) {
                 return;
+            }
 
             // Draw filled area if requested
             if (showFill && processedDataPoints.length > 1) {
@@ -109,27 +112,26 @@ Rectangle {
                 ctx.fill();
             }
 
+            if (processedDataPoints.length === 1) {
+                // Single point - draw a small circle
+                ctx.fillStyle = lineColor;
+                ctx.beginPath();
+                ctx.arc(width / 2, mapY(processedDataPoints[0]), 1, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
             // Draw line
             if (processedDataPoints.length > 1) {
                 ctx.strokeStyle = lineColor;
                 ctx.lineWidth = lineWidth;
                 ctx.beginPath();
 
-                for (var j = 0; j < processedDataPoints.length; j++) {
-                    if (j === 0) {
-                        ctx.moveTo(mapX(j), mapY(processedDataPoints[j]));
-                    } else {
-                        ctx.lineTo(mapX(j), mapY(processedDataPoints[j]));
-                    }
+                ctx.moveTo(mapX(0), mapY(processedDataPoints[0]));
+                for (var j = 1; j < processedDataPoints.length; j++) {
+                    ctx.lineTo(mapX(j), mapY(processedDataPoints[j]));
                 }
 
                 ctx.stroke();
-            } else if (processedDataPoints.length === 1) {
-                // Single point - draw a small circle
-                ctx.fillStyle = lineColor;
-                ctx.beginPath();
-                ctx.arc(width / 2, mapY(processedDataPoints[0]), 1, 0, 2 * Math.PI);
-                ctx.fill();
             }
         }
 

@@ -67,7 +67,10 @@ Kirigami.AbstractCard {
         clip: true
 
         delegate: ColumnLayout {
+            id: stockItem
             width: listView.width
+
+            property bool graphExpanded: false
             RowLayout {
                 width: parent.width
                 spacing: Kirigami.Units.smallSpacing
@@ -106,18 +109,51 @@ Kirigami.AbstractCard {
                     topPadding: Kirigami.Units.mediumSpacing / 2
                     bottomPadding: Kirigami.Units.mediumSpacing / 2
                 }
+
+                PlasmaComponents.ToolButton {
+                    id: expandButton
+                    Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                    Layout.preferredHeight: Kirigami.Units.iconSizes.small
+
+                    icon.name: stockItem.graphExpanded ? "arrow-up" : "arrow-down"
+
+                    onClicked: {
+                        stockItem.graphExpanded = !stockItem.graphExpanded;
+                    }
+
+                    PlasmaComponents.ToolTip {
+                        text: stockItem.graphExpanded ? "Hide graph" : "Show graph"
+                    }
+                }
             }
 
             RowLayout {
+                id: graphRow
                 width: parent.width
                 spacing: Kirigami.Units.smallSpacing
+                visible: stockItem.graphExpanded
+                opacity: stockItem.graphExpanded ? 1.0 : 0.0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.InOutQuad
+                    }
+                }
 
                 MiniGraphPlotter {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 30
+                    Layout.preferredHeight: stockItem.graphExpanded ? 30 : 0
                     dataPoints: model.historicalPrice
                     lineColor: Kirigami.Theme.highlightColor
                     showFill: true
+
+                    Behavior on Layout.preferredHeight {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
                 }
             }
         }

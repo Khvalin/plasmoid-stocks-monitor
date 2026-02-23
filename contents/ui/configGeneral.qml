@@ -12,6 +12,8 @@ ColumnLayout {
     property var loaded: false
     spacing: Kirigami.Units.largeSpacing
 
+    signal configurationChanged
+
     Kirigami.FormLayout {
         id: configGeneralForm
         Layout.fillWidth: true
@@ -29,7 +31,7 @@ ColumnLayout {
         ListModel {
             id: chips
 
-            onCountChanged: {
+            function updateSelectedSymbols() {
                 if (!root.loaded) {
                     return;
                 }
@@ -40,6 +42,10 @@ ColumnLayout {
                 }
 
                 root.cfg_selectedSymbols = res;
+            }
+
+            onCountChanged: {
+                updateSelectedSymbols();
             }
         }
 
@@ -101,15 +107,87 @@ ColumnLayout {
                 Repeater {
                     model: chips
 
-                    delegate: Kirigami.Chip {
+                    delegate: Item {
                         required property int index
                         required property var model
 
-                        text: model.text
-                        icon.name: "edit-delete-remove"
-                        onClicked: chips.remove(index)
-                        display: PlasmaComponents.Button.TextBesideIcon
-                        Layout.preferredHeight: Kirigami.Units.gridUnit * 1.5
+                        width: chip.width
+                        height: chip.height
+
+                        DropArea {
+                            anchors.fill: parent
+
+                            onEntered: function (drag) {
+                                if (drag.source.chipIndex !== parent.index) {
+                                    // Move the dragged item to this position
+                                    chips.move(drag.source.chipIndex, parent.index, 1);
+                                    // Update the drag source index
+                                    drag.source.chipIndex = parent.index;
+                                    // Emit signal to make Apply button active
+                                    root.configurationChanged();
+                                }
+                            }
+                        }
+
+                        Kirigami.Chip {
+                            id: chip
+                            text: parent.model.text
+                            icon.name: "edit-delete-remove"
+                            onClicked: chips.remove(parent.index)
+                            display: PlasmaComponents.Button.TextBesideIcon
+                            Layout.preferredHeight: Kirigami.Units.gridUnit * 1.5
+
+                            property int chipIndex: parent.index
+
+                            // Make it draggable
+                            Drag.active: dragArea.drag.active
+                            Drag.source: chip
+                            Drag.hotSpot.x: width / 2
+                            Drag.hotSpot.y: height / 2
+
+                            // Visual feedback during drag
+                            opacity: Drag.active ? 0.7 : 1.0
+                            scale: Drag.active ? 1.1 : 1.0
+
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+                            Behavior on scale {
+                                NumberAnimation {
+                                    duration: 150
+                                }
+                            }
+
+                            MouseArea {
+                                id: dragArea
+                                anchors.fill: parent
+
+                                drag.target: parent
+                                drag.axis: Drag.XAndYAxis
+
+                                onPressed: function (mouse) {
+                                    // Store original position
+                                    chip.Drag.start();
+                                    chip.chipIndex = chip.parent.index;
+                                }
+
+                                onReleased: function (mouse) {
+                                    chip.Drag.drop();
+                                    // Reset position
+                                    chip.x = 0;
+                                    chip.y = 0;
+                                }
+
+                                // Prevent chip click when dragging
+                                onClicked: function (mouse) {
+                                    if (!dragArea.drag.active) {
+                                        chips.remove(chip.parent.index);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

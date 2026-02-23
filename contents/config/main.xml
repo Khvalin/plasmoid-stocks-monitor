@@ -10,4 +10,16 @@
         </entry>
     </group>
 
+    <group name="DataProvider">
+        <entry name="dataProvider" type="String">
+            <default>alpaca.markets</default>
+        </entry>
+        <entry name="apiKey" type="String">
+            <default></default>
+        </entry>
+        <entry name="apiSecret" type="String">
+            <default></default>
+        </entry>
+    </group>
+
 </kcfg>
