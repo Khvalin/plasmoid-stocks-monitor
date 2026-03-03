@@ -1,8 +1,8 @@
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
-import org.kde.kirigami 2.12 as Kirigami
-import org.kde.plasma.components 3.0 as PlasmaComponents
-import org.kde.plasma.core 2.0 as PlasmaCore
+import QtQuick
+import QtQuick.Layouts
+import org.kde.kirigami as Kirigami
+import org.kde.plasma.components as PlasmaComponents
+import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 
 Rectangle {
@@ -38,24 +38,58 @@ Rectangle {
 
     color: backgroundColor
 
-    onDataPointsChanged: calculateBounds()
+    onDataPointsChanged: updateGraph()
+    onVisibleChanged: if (visible) updateGraph()
+    onWidthChanged: updateGraph()
+    onHeightChanged: updateGraph()
+    onShowFillChanged: updateGraph()
+    onShowGridChanged: updateGraph()
+    onLineColorChanged: updateGraph()
 
-    Component.onCompleted: calculateBounds()
+    Component.onCompleted: updateGraph()
+
+    Timer {
+        id: updateTimer
+        interval: 50
+        repeat: false
+        onTriggered: {
+            gridCanvas.requestPaint()
+            graphCanvas.requestPaint()
+        }
+    }
+
+    function updateGraph() {
+        calculateBounds()
+        updateTimer.restart()
+    }
 
     function calculateBounds() {
-        if (dataPoints.length === 0) {
+        if (!dataPoints || dataPoints.length === 0) {
             minValue = 0;
             maxValue = 100;
             valueRange = 100;
             return;
         }
 
-        minValue = Math.min(...dataPoints);
-        maxValue = Math.max(...dataPoints);
+        // Find min/max values safely for Qt6
+        minValue = null;
+        maxValue = null;
+
+        for (var i = 0; i < dataPoints.length; i++) {
+            var value = dataPoints[i];
+            if (typeof value === 'number' && !isNaN(value)) {
+                if (minValue === null || value < minValue) minValue = value;
+                if (maxValue === null || value > maxValue) maxValue = value;
+            }
+        }
+
+        // Handle case where all values are invalid
+        if (minValue === null) minValue = 0;
+        if (maxValue === null) maxValue = 100;
 
         // Minimal padding for very compact display
         var padding = (maxValue - minValue) * 0.02;
-        if (padding === 0)
+        if (padding === 0 || isNaN(padding))
             padding = Math.abs(maxValue) * 0.02 || 0.1;
 
         minValue -= padding;
@@ -102,12 +136,18 @@ Rectangle {
         id: gridCanvas
         anchors.fill: parent
         visible: showGrid
+        renderTarget: Canvas.FramebufferObject
+        renderStrategy: Canvas.Cooperative
 
-        onPaint: {
+        onPaint: drawGrid()
+
+        function drawGrid() {
             var ctx = getContext("2d");
+            if (!ctx) return;
+
             ctx.clearRect(0, 0, width, height);
 
-            if (!showGrid || dataPoints.length === 0)
+            if (!showGrid || !dataPoints || dataPoints.length === 0)
                 return;
 
             ctx.strokeStyle = gridColor;
@@ -145,48 +185,69 @@ Rectangle {
     Canvas {
         id: graphCanvas
         anchors.fill: parent
+        renderTarget: Canvas.FramebufferObject
+        renderStrategy: Canvas.Cooperative
 
-        onPaint: {
+        onPaint: drawGraph()
+
+        function drawGraph() {
             var ctx = getContext("2d");
+            if (!ctx) return;
+
             ctx.clearRect(0, 0, width, height);
 
-            if (dataPoints.length === 0)
+            if (!dataPoints || dataPoints.length === 0)
                 return;
 
-            // Draw filled area
-            if (showFill) {
-                ctx.fillStyle = fillColor;
+            try {
+                // Draw filled area
+                if (showFill) {
+                    ctx.fillStyle = fillColor;
+                    ctx.beginPath();
+
+                    var validPoints = false;
+                    ctx.moveTo(mapX(0), marginTop + plotHeight);
+
+                    for (var i = 0; i < dataPoints.length; i++) {
+                        if (typeof dataPoints[i] === 'number' && !isNaN(dataPoints[i])) {
+                            ctx.lineTo(mapX(i), mapY(dataPoints[i]));
+                            validPoints = true;
+                        }
+                    }
+
+                    if (validPoints) {
+                        ctx.lineTo(mapX(dataPoints.length - 1), marginTop + plotHeight);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+
+                // Draw line
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = lineWidth;
+                ctx.setLineDash([]);
                 ctx.beginPath();
-                ctx.moveTo(mapX(0), marginTop + plotHeight);
 
-                for (var i = 0; i < dataPoints.length; i++) {
-                    ctx.lineTo(mapX(i), mapY(dataPoints[i]));
+                var firstValid = true;
+
+                for (var j = 0; j < dataPoints.length; j++) {
+                    if (typeof dataPoints[j] === 'number' && !isNaN(dataPoints[j])) {
+                        if (firstValid) {
+                            ctx.moveTo(mapX(j), mapY(dataPoints[j]));
+                            firstValid = false;
+                        } else {
+                            ctx.lineTo(mapX(j), mapY(dataPoints[j]));
+                        }
+                    }
                 }
 
-                ctx.lineTo(mapX(dataPoints.length - 1), marginTop + plotHeight);
-                ctx.closePath();
-                ctx.fill();
-            }
-
-            // Draw line
-            ctx.strokeStyle = lineColor;
-            ctx.lineWidth = lineWidth;
-            ctx.setLineDash([]);
-            ctx.beginPath();
-
-            for (var j = 0; j < dataPoints.length; j++) {
-                if (j === 0) {
-                    ctx.moveTo(mapX(j), mapY(dataPoints[j]));
-                } else {
-                    ctx.lineTo(mapX(j), mapY(dataPoints[j]));
+                if (!firstValid) {  // At least one valid point was found
+                    ctx.stroke();
                 }
+            } catch (e) {
+                console.error("Error drawing graph:", e);
             }
-
-            ctx.stroke();
         }
-
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
     }
 
     // Compact data points (only show if space allows)
@@ -215,21 +276,16 @@ Rectangle {
         }
     }
 
-    // Redraw when data changes
-    Connections {
-        target: graphPlotter
-        function onDataPointsChanged() {
-            gridCanvas.requestPaint();
-            graphCanvas.requestPaint();
-        }
-        function onLineColorChanged() {
-            graphCanvas.requestPaint();
-        }
-        function onShowGridChanged() {
-            gridCanvas.requestPaint();
-        }
-        function onShowFillChanged() {
-            graphCanvas.requestPaint();
+    // No connections needed, using signals directly with updateGraph()
+
+    // Handle data point clicks for future interactivity
+    MouseArea {
+        id: graphMouseArea
+        anchors.fill: parent
+        hoverEnabled: true
+
+        onClicked: {
+            // For future functionality
         }
     }
 }

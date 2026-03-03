@@ -1,10 +1,10 @@
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
-import org.kde.kirigami 2.12 as Kirigami
-import org.kde.plasma.components 3.0 as PlasmaComponents
-import org.kde.plasma.core 2.0 as PlasmaCore
-import org.kde.plasma.plasmoid 2.0
-import org.kde.quickcharts 1.0 as Charts
+import QtQuick
+import QtQuick.Layouts
+import org.kde.kirigami as Kirigami
+import org.kde.plasma.components as PlasmaComponents
+import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.plasmoid
+
 
 import org.kde.plasma.extras as PlasmaExtras
 
@@ -23,15 +23,13 @@ Kirigami.AbstractCard {
 
             // Extract value safely with fallbacks
             let stockValue = "N/A";
-            let stockHistoricalPrice = [];
+            let histPrice = [];
             try {
                 if (stockData?.[key] && Number.isFinite(stockData[key]?.currentWeightedPrice)) {
                     stockValue = stockData[key].currentWeightedPrice.toLocaleString(Qt.locale(), 'f', 2);
-                    stockHistoricalPrice = stockData[key].historicalWeightedPrice.map(item => {
-                        return {
-                            value: item
-                        };
-                    });
+                }
+                if (stockData?.[key] && Array.isArray(stockData[key]?.historicalWeightedPrice)) {
+                    histPrice = stockData[key].historicalWeightedPrice;
                 }
             } catch (e) {
                 console.log("Error formatting stock value for " + key + ": " + e);
@@ -40,7 +38,7 @@ Kirigami.AbstractCard {
             stockDataFlat.append({
                 symbol: key,
                 "value": stockValue,
-                "historicalPrice": (stockHistoricalPrice || [])
+                "historicalPrice": histPrice
             });
         }
     }
@@ -144,7 +142,7 @@ Kirigami.AbstractCard {
                 MiniGraphPlotter {
                     Layout.fillWidth: true
                     Layout.preferredHeight: stockItem.graphExpanded ? 30 : 0
-                    dataPoints: model.historicalPrice
+                    dataPoints: model.historicalPrice || []
                     lineColor: Kirigami.Theme.highlightColor
                     showFill: true
 

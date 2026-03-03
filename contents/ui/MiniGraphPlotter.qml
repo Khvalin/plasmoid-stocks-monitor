@@ -1,11 +1,11 @@
-import QtQuick 2.15
-import org.kde.kirigami 2.12 as Kirigami
+import QtQuick
+import org.kde.kirigami as Kirigami
 
 Rectangle {
     id: miniGraph
 
     // Public properties
-    property var dataPoints: null  // Expects QQmlListModel only
+    property var dataPoints: null  // Expects array or ListModel of objects with 'value' property
     property color lineColor: Kirigami.Theme.highlightColor
     property color fillColor: Qt.rgba(lineColor.r, lineColor.g, lineColor.b, 0.1)
     property color backgroundColor: "transparent"
@@ -16,7 +16,7 @@ Rectangle {
     property real margin: 1
 
     // Private properties
-    property var processedDataPoints: []
+    property var values: []
     property real minValue: 0
     property real maxValue: 100
     property real valueRange: maxValue - minValue
@@ -25,134 +25,166 @@ Rectangle {
 
     color: backgroundColor
 
-    onDataPointsChanged: {
-        processDataPoints();
-        calculateBounds();
+    // Update triggers
+    onDataPointsChanged: updateData()
+    onWidthChanged: requestDeferredPaint()
+    onHeightChanged: requestDeferredPaint()
+    onVisibleChanged: if (visible) requestDeferredPaint()
+    onShowFillChanged: requestDeferredPaint()
+    onLineColorChanged: requestDeferredPaint()
+
+    Component.onCompleted: updateData()
+
+    Timer {
+        id: paintTimer
+        interval: 16
+        repeat: false
+        onTriggered: miniCanvas.requestPaint()
     }
 
-    Component.onCompleted: {
-        processDataPoints();
-        calculateBounds();
+    function requestDeferredPaint() {
+        paintTimer.restart()
     }
 
-    function processDataPoints() {
-        processedDataPoints = [];
+    function updateData() {
+        extractValues()
+        calculateBounds()
+        requestDeferredPaint()
+    }
+
+    function extractValues() {
+        values = []
 
         if (!dataPoints) {
-            return;
+            return
         }
 
-        // Handle QQmlListModel of numbers only
-        for (var i = 0; i < dataPoints.count; i++) {
-            var item = dataPoints.get(i).value;
-            processedDataPoints.push(item);
+        try {
+            // Handle ListModel
+            if (dataPoints.count !== undefined) {
+                for (var i = 0; i < dataPoints.count; i++) {
+                    var item = dataPoints.get(i)
+                    if (item && item.value !== undefined) {
+                        var val = Number(item.value)
+                        if (!isNaN(val)) {
+                            values.push(val)
+                        }
+                    }
+                }
+            }
+            // Handle plain array
+            else if (Array.isArray(dataPoints)) {
+                for (var j = 0; j < dataPoints.length; j++) {
+                    if (typeof dataPoints[j] === 'number') {
+                        values.push(dataPoints[j])
+                    } else if (dataPoints[j] && dataPoints[j].value !== undefined) {
+                        var val2 = Number(dataPoints[j].value)
+                        if (!isNaN(val2)) {
+                            values.push(val2)
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("MiniGraphPlotter: Error processing dataPoints:", e)
         }
     }
 
     function calculateBounds() {
-        if (!processedDataPoints.length) {
-            minValue = 0;
-            maxValue = 100;
-            valueRange = 100;
-            return;
+        if (values.length === 0) {
+            minValue = 0
+            maxValue = 100
+            valueRange = 100
+            return
         }
 
-        minValue = Math.min(...processedDataPoints);
-        maxValue = Math.max(...processedDataPoints);
+        minValue = values[0]
+        maxValue = values[0]
 
-        // Minimal padding for ultra-compact display
-        var padding = (maxValue - minValue) * 0.05;
-        if (padding === 0)
-            padding = Math.abs(maxValue) * 0.05 || 0.1;
+        for (var i = 1; i < values.length; i++) {
+            if (values[i] < minValue) minValue = values[i]
+            if (values[i] > maxValue) maxValue = values[i]
+        }
 
-        minValue -= padding;
-        maxValue += padding;
-        valueRange = maxValue - minValue;
+        // Add padding
+        var padding = (maxValue - minValue) * 0.05
+        if (padding === 0 || isNaN(padding)) {
+            padding = Math.abs(maxValue) * 0.05 || 0.1
+        }
+
+        minValue -= padding
+        maxValue += padding
+        valueRange = maxValue - minValue
     }
 
     function mapX(index) {
-        if (processedDataPoints.length <= 1) {
-            return margin;
-        }
-        return margin + (index / (processedDataPoints.length - 1)) * plotWidth;
+        if (values.length <= 1) return margin
+        return margin + (index / (values.length - 1)) * plotWidth
     }
 
     function mapY(value) {
-        if (valueRange === 0) {
-            return margin + plotHeight / 2;
-        }
-        return margin + plotHeight - ((value - minValue) / valueRange) * plotHeight;
+        if (valueRange === 0) return margin + plotHeight / 2
+        return margin + plotHeight - ((value - minValue) / valueRange) * plotHeight
     }
 
-    // Ultra-compact graph canvas
+    function drawGraph() {
+        var ctx = miniCanvas.getContext("2d")
+        if (!ctx) return
+
+        ctx.clearRect(0, 0, miniCanvas.width, miniCanvas.height)
+
+        if (values.length === 0) return
+
+        try {
+            // Draw filled area
+            if (showFill && values.length > 1) {
+                ctx.fillStyle = fillColor
+                ctx.beginPath()
+                ctx.moveTo(mapX(0), margin + plotHeight)
+
+                for (var i = 0; i < values.length; i++) {
+                    ctx.lineTo(mapX(i), mapY(values[i]))
+                }
+
+                ctx.lineTo(mapX(values.length - 1), margin + plotHeight)
+                ctx.closePath()
+                ctx.fill()
+            }
+
+            if (values.length === 1) {
+                // Single point - draw a circle
+                ctx.fillStyle = lineColor
+                ctx.beginPath()
+                ctx.arc(miniCanvas.width / 2, mapY(values[0]), 1.5, 0, 2 * Math.PI)
+                ctx.fill()
+            }
+
+            // Draw line
+            if (values.length > 1) {
+                ctx.strokeStyle = lineColor
+                ctx.lineWidth = lineWidth
+                ctx.beginPath()
+
+                ctx.moveTo(mapX(0), mapY(values[0]))
+                for (var j = 1; j < values.length; j++) {
+                    ctx.lineTo(mapX(j), mapY(values[j]))
+                }
+
+                ctx.stroke()
+            }
+        } catch (e) {
+            console.error("MiniGraphPlotter: Error during drawing:", e)
+        }
+    }
+
     Canvas {
         id: miniCanvas
         anchors.fill: parent
 
-        onPaint: {
-            var ctx = getContext("2d");
-            ctx.clearRect(0, 0, width, height);
+        // These settings help Qt6 render more reliably
+        renderTarget: Canvas.FramebufferObject
+        renderStrategy: Canvas.Cooperative
 
-            if (!processedDataPoints.length) {
-                return;
-            }
-
-            // Draw filled area if requested
-            if (showFill && processedDataPoints.length > 1) {
-                ctx.fillStyle = fillColor;
-                ctx.beginPath();
-                ctx.moveTo(mapX(0), margin + plotHeight);
-
-                for (var i = 0; i < processedDataPoints.length; i++) {
-                    ctx.lineTo(mapX(i), mapY(processedDataPoints[i]));
-                }
-
-                ctx.lineTo(mapX(processedDataPoints.length - 1), margin + plotHeight);
-                ctx.closePath();
-                ctx.fill();
-            }
-
-            if (processedDataPoints.length === 1) {
-                // Single point - draw a small circle
-                ctx.fillStyle = lineColor;
-                ctx.beginPath();
-                ctx.arc(width / 2, mapY(processedDataPoints[0]), 1, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-
-            // Draw line
-            if (processedDataPoints.length > 1) {
-                ctx.strokeStyle = lineColor;
-                ctx.lineWidth = lineWidth;
-                ctx.beginPath();
-
-                ctx.moveTo(mapX(0), mapY(processedDataPoints[0]));
-                for (var j = 1; j < processedDataPoints.length; j++) {
-                    ctx.lineTo(mapX(j), mapY(processedDataPoints[j]));
-                }
-
-                ctx.stroke();
-            }
-        }
-
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
-    }
-
-    // Redraw when data changes
-    Connections {
-        target: miniGraph
-        function onDataPointsChanged() {
-            miniCanvas.requestPaint();
-        }
-        function onLineColorChanged() {
-            miniCanvas.requestPaint();
-        }
-        function onShowFillChanged() {
-            miniCanvas.requestPaint();
-        }
-        function onProcessedDataPointsChanged() {
-            miniCanvas.requestPaint();
-        }
+        onPaint: drawGraph()
     }
 }

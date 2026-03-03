@@ -1,9 +1,9 @@
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
-import org.kde.kirigami 2.12 as Kirigami
-import org.kde.plasma.components 3.0 as PlasmaComponents
-import org.kde.plasma.core 2.0 as PlasmaCore
-import org.kde.plasma.plasmoid 2.0
+import QtQuick
+import QtQuick.Layouts
+import org.kde.kirigami as Kirigami
+import org.kde.plasma.components as PlasmaComponents
+import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.plasmoid
 
 Item {
     id: stockLoader
@@ -25,13 +25,26 @@ Item {
             .then(([historicalData, latestData]) => {
                 const stocksData = {};
                 for (const symbol in latestData.bars) {
+                    // Convert historical data to a Qt6-compatible format
+                    let historicalPrices = [];
+                    if (historicalData?.bars[symbol]) {
+                        for (let i = 0; i < historicalData.bars[symbol].length; i++) {
+                            if (historicalData.bars[symbol][i] &&
+                                historicalData.bars[symbol][i].vw !== undefined) {
+                                historicalPrices.push({
+                                    value: historicalData.bars[symbol][i].vw
+                                });
+                            }
+                        }
+                    }
+
                     stocksData[symbol] = {
                         currentWeightedPrice: latestData.bars[symbol].vw,
-                        historicalWeightedPrice: historicalData?.bars[symbol]?.map(data => data.vw),
+                        historicalWeightedPrice: historicalPrices,
                         historicalDateTime: historicalData?.bars[symbol]?.map(data => data.t)
                     };
                 }
-                console.debug("loaded data", JSON.stringify(stocksData));
+                console.debug("loaded data for Qt6 charts", JSON.stringify(stocksData));
 
                 return stocksData;
             }).catch(error => {
